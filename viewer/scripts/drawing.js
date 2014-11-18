@@ -111,7 +111,7 @@ function drawPhaseShifter(ctx) {
     ctx.stroke();
     ctx.beginPath();
     ctx.arc(.5, 0, .1, 0, 2*Math.PI, false);
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'lightgreen';
     ctx.fill();
 
     this.phase+=0.01;

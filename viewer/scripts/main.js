@@ -82,5 +82,5 @@ function main() {
     renderer.loop();
 
     // Periodically reload the page
-    //setTimeout(function() {window.location.reload()}, 10000);
+    setTimeout(function() {window.location.reload()}, 2000);
 }
