@@ -141,6 +141,7 @@ function Circuit() {
     }
 
     self.fromJSON = function (json) {
+        self.clear();
         for (var i=0; i <json.length; ++i) {
            var c = json[i];
            if (c.type=="sps"){self.components.push(new SPS(c.pos.x, c.pos.y));}

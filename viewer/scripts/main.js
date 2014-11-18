@@ -71,7 +71,6 @@ function main() {
     circuit = new Circuit();
 
     // Load the circuit which we want to display
-    circuit.fromJSON(myCircuitJSON);
 
     // Away we go
     window.onresize=resize;
@@ -82,5 +81,14 @@ function main() {
     renderer.loop();
 
     // Periodically reload the page
-    setTimeout(function() {window.location.reload()}, 2000);
+    setInterval(function() {
+         var xhReq = new XMLHttpRequest();
+         xhReq.open("GET", "scripts/mycircuit.js", false);
+         xhReq.send(null);
+         var serverResponse = xhReq.responseText;
+         var q=JSON.parse(serverResponse);
+         circuit.fromJSON(q);
+         renderer.needFrame();
+        },
+         500);
 }
