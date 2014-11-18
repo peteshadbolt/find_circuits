@@ -8,12 +8,7 @@ from time import clock
 from pprint import pprint
 import sys
 
-generators = [lambda x,y: {"type":"coupler", "pos": posxy(x,y), "ratio":0.5},
-              lambda x,y: {"type":"coupler", "pos": posxy(x,y), "ratio":1/3.},
-              lambda x,y: {"type":"coupler", "pos": posxy(x,y), "ratio":1/4.},
-              lambda x,y: {"type":"phaseshifter", "pos": posxy(x,y), "phase":p2},
-              lambda x,y: {"type":"phaseshifter", "pos": posxy(x,y), "phase":p4},
-              lambda x,y: {"type":"crossing", "pos": posxy(x,y)}]
+generators = [lambda x,y: {"type":"crossing", "pos": posxy(x,y)}]
 
 bp = lambda y: {"type": "bellpair", "pos": posxy(-1, y)}
 sps = lambda y: {"type": "sps", "pos": posxy(-1, y)}
@@ -25,13 +20,21 @@ def sketch(circuit):
     f.write(s)
     f.close()
 
+def collision(a,b):
+    if a["x"]!=b["x"]: return False
+    if a["bottom"]<b["y"]: return False
+    if b["bottom"]<a["y"]: return False
+    return True
+
 def mutate_add(circuit):
     """ Find an empty slot, and add a component """
     x=randint(0, depth); y=randint(0, width)
+    a=generators[randint(len(generators))](x,y)
     for c in circuit:
-        q=lo.fill_gaps(c)
-        if q["x"]==x and q["y"]<=y<=q["bottom"]: return
-    circuit.append(generators[randint(len(generators))](x,y))
+        b=lo.fill_gaps(c)
+        q=lo.fill_gaps(a)
+        if collision(q,b): return
+    circuit.append(a)
 
 def mutate_delete(circuit):
     """ Find an occupied slot, and delete a component """
@@ -54,40 +57,44 @@ def random_circuit(count):
 
 def fitness(circuit):
     compiled=lo.compile(sources+circuit)
-    compiled["patterns"]=[(0,1)]
+    compiled["patterns"]=[(2,3,4)]
     u=np.matrix(compiled["unitary"])
     if not np.allclose(u*u.H, np.eye(len(u))):
         print u.round(1)
+        pprint(circuit)
         sketch(circuit)
         sys.exit(0)
     output_state = lo.simulate(**compiled)
-    return abs(lo.dinner(output_state, target_state))
+    return abs(lo.dinner(output_state, target_state))**2
 
 
 p2=np.pi/2.; p4=np.pi/4.
 posxy = lambda x,y: {"x":x, "y":y}
 depth=5
 width=5
-sources=[sps(0), sps(2)]
-target_state = defaultdict(complex, {(0,1):1})
+sources=[sps(0), sps(1), sps(4)]
+target_state = defaultdict(complex, {(2,3,4):1})
 
 
 # Start here
 current=random_circuit(100)
 
 t=clock()
-for temperature in np.linspace(1, 0, 1000):
+for temperature in np.linspace(1, 0, 10000):
     alternative=list(current)
     mutate(alternative)
     f1=fitness(alternative)
     f2=fitness(current)
-    if f1>f2:
+    p=(1+f1-f2)/2.
+    if np.random.rand()<p:
         current=alternative
-    print f2
-
 
     # Sketch twice per second
-    if clock()-t>0.5:
-        t=clock()
+    if clock()-t>0.2:
         sketch(sources+current)
+        if f2==1: 
+            print "success"
+            sketch(sources+current)
+            sys.exit()
+        t=clock()
 
