@@ -4,12 +4,10 @@ from numpy.random import randint
 from collections import defaultdict
 import itertools as it
 import json
-import time
+from time import clock
+from pprint import pprint
+import sys
 
-p2=np.pi/2.; p4=np.pi/4.
-posxy = lambda x,y: {"x":x, "y":y}
-depth=10
-width=10
 generators = [lambda x,y: {"type":"coupler", "pos": posxy(x,y), "ratio":0.5},
               lambda x,y: {"type":"coupler", "pos": posxy(x,y), "ratio":1/3.},
               lambda x,y: {"type":"coupler", "pos": posxy(x,y), "ratio":1/4.},
@@ -31,7 +29,7 @@ def mutate_add(circuit):
     """ Find an empty slot, and add a component """
     x=randint(0, depth); y=randint(0, width)
     for c in circuit:
-        q=c.copy(); lo.fill_gaps(q)
+        q=lo.fill_gaps(c)
         if q["x"]==x and q["y"]<=y<=q["bottom"]: return
     circuit.append(generators[randint(len(generators))](x,y))
 
@@ -42,16 +40,10 @@ def mutate_delete(circuit):
 
 def mutate(circuit):
     """ Either add or remove a component """
-    if np.random.rand()>.2:
+    if np.random.rand()>.3:
         mutate_add(circuit)
     else:
         mutate_delete(circuit)
-
-def get_output(sources, dna, patterns):
-    """ Get the output state of a circuit """
-    circuit=lo.compile_circuit(sources+dna)
-    circuit.patterns=patterns
-    return lo.simulate(**circuit)
 
 def random_circuit(count):
     """ Generate a new random circuit """
@@ -60,15 +52,42 @@ def random_circuit(count):
         mutate_add(circuit)
     return circuit
 
-sources=[sps(y) for y in range(2)]
-detectors=[bucket(y) for y in range(2)]
-dna=random_circuit(100)
+def fitness(circuit):
+    compiled=lo.compile(sources+circuit)
+    compiled["patterns"]=[(0,1)]
+    u=np.matrix(compiled["unitary"])
+    if not np.allclose(u*u.H, np.eye(len(u))):
+        print u.round(1)
+        sketch(circuit)
+        sys.exit(0)
+    output_state = lo.simulate(**compiled)
+    return abs(lo.dinner(output_state, target_state))
 
-for i in range(100):
-    mutate(dna)
-    mutate(dna)
-    mutate(dna)
-    time.sleep(.2)
-    print "".join([a["type"][0] for a in dna])
-    sketch(sources+dna)
+
+p2=np.pi/2.; p4=np.pi/4.
+posxy = lambda x,y: {"x":x, "y":y}
+depth=5
+width=5
+sources=[sps(0), sps(2)]
+target_state = defaultdict(complex, {(0,1):1})
+
+
+# Start here
+current=random_circuit(100)
+
+t=clock()
+for temperature in np.linspace(1, 0, 1000):
+    alternative=list(current)
+    mutate(alternative)
+    f1=fitness(alternative)
+    f2=fitness(current)
+    if f1>f2:
+        current=alternative
+    print f2
+
+
+    # Sketch twice per second
+    if clock()-t>0.5:
+        t=clock()
+        sketch(sources+current)
 
