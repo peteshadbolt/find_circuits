@@ -16,7 +16,7 @@ function Grid() {
         var oy = Math.floor(topLeft.y);
 
         // Draw the grid when we zoom in enough
-        if (camera.z>50){
+        if (camera.z>40){
             ctx.lineWidth=0.01;
             ctx.strokeStyle= "#cccccc";
             ctx.beginPath();

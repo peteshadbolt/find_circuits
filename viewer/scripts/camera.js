@@ -8,7 +8,7 @@ function Camera()
     var self=this;
     self.pos=new Vector(0, 0);
     self.offset=new Vector(0, 0);
-    self.z=25; self.tz=25;
+    self.z=45; self.tz=45;
 
     self.translate = function (delta) {
         self.pos.inc(delta);

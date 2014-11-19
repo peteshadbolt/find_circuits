@@ -8,7 +8,7 @@ from time import clock
 from pprint import pprint
 import sys
 
-generators = [lambda x,y: {"type":"crossing", "pos": posxy(x,y)}]
+generators = [lambda x,y: {"type":"crossing", "pos": posxy(x,y)}, lambda x,y: {"type":"coupler", "ratio":.5, "pos": posxy(x,y)}]
 
 bp = lambda y: {"type": "bellpair", "pos": posxy(-1, y)}
 sps = lambda y: {"type": "sps", "pos": posxy(-1, y)}
@@ -79,9 +79,9 @@ target_state = defaultdict(complex, {(2,3,4):1})
 # Start here
 current=random_circuit(100)
 
-t=clock()
-for temperature in np.linspace(1, 0, 10000):
+for i in range(100000):
     alternative=list(current)
+    mutate(alternative)
     mutate(alternative)
     f1=fitness(alternative)
     f2=fitness(current)
@@ -89,12 +89,10 @@ for temperature in np.linspace(1, 0, 10000):
     if np.random.rand()<p:
         current=alternative
 
-    # Sketch twice per second
-    if clock()-t>0.2:
+    if f2==1: 
+        print "success"
         sketch(sources+current)
-        if f2==1: 
-            print "success"
-            sketch(sources+current)
-            sys.exit()
-        t=clock()
+        sys.exit(0)
+
+print "fail"
 

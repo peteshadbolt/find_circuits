@@ -57,6 +57,7 @@ function resize() {
 function main() {
     // Set up the drawing environment an-d fit to window
     gc=document.getElementById('canvas');
+    console=document.getElementById('console');
     gd=gc.getContext('2d');
 
     // Create a grid, camera, and mouse
@@ -79,6 +80,7 @@ function main() {
     camera.offset=(new Vector(100,50))
     camera.loop();
     renderer.loop();
+     console.innerHTML+="console<br>";
 
     // Periodically reload the page
     setInterval(function() {
@@ -89,6 +91,6 @@ function main() {
          var q=JSON.parse(serverResponse);
          circuit.fromJSON(q);
          renderer.needFrame();
-        },
-         500);
+         //console.innerHTML+="awd<br>";
+        }, 500);
 }
