@@ -7,38 +7,61 @@ from pprint import pprint
 import sys
 from circuit import *
 
-def fitness(circuit):
-    sources=[sps(0), sps(1), sps(4)]
-    target_state = defaultdict(complex, {(2,3,4):1})
-    compiled=lo.compile(sources+circuit.json)
-    compiled["patterns"]=[(2,3,4)]
+sources=[sps(0), sps(1), sps(2), sps(3), sps(4)]
+#detectors=[{"type":"bucket", "pos":posxy(5, y), "patterns":[y]} for y in (2,3,4)]
 
+def fitness(circuit):
+    target_state = defaultdict(complex, {(0,0,1,1,2):1})
+    compiled=lo.compile(sources+circuit.json)
+    compiled["patterns"]=target_state.keys()
+    check_unitary(compiled["unitary"])
     output_state = lo.simulate(**compiled)
     return abs(lo.dinner(output_state, target_state))**2
 
+def crossover(a, b):
+    if a.fitness>b.fitness:
+        return a.copy()
+    else:
+        return b.copy()
 
 # Start here
-current=Circuit(True, 5, 5)
-sources=[sps(0), sps(1), sps(4)]
-sketch(sources+current.json)
+width=5; depth=5
+generation_size=500
+mutation_probability=.3
+keep_fraction=.5
+generation=[Circuit(True, 5, 5) for i in range(generation_size)]
+t=clock()
+
+while generation[0].fitness<1:
+    # Evaluate - this should use four cores
+    for c in generation:
+        c.fitness=fitness(c)
+
+    # Survival of the fittest
+    generation.sort(key=lambda c: c.fitness, reverse=True)
+    best = generation[0].fitness
+    average = np.average([c.fitness for c in generation])
+    size = np.average([len(c.json) for c in generation])
+    print "best=%.3f\taverage=%.4f\tsize=%.3f" % (best, average, size)
+    generation=generation[:int((len(generation)-1)*keep_fraction)]
+
+    # Draw a figure
+    if clock()-t>.5: 
+        sketch(sources+generation[0].json)
+        t=clock()
+
+    # Repoulate
+    while len(generation)<generation_size:
+        a=random.choice(generation)
+        b=random.choice(generation)
+        generation.append(crossover(a,b))
+
+    # Mutate
+    for c in generation:
+        if np.random.rand() < mutation_probability:
+            c.mutate()
+            c.mutate()
+            c.mutate()
 
 
-for i in range(10000):
-    alternative=current.copy()
-    alternative.mutate()
-    #alternative.mutate()
-    current=alternative
-    f1=fitness(alternative)
-    f2=fitness(current)
-    print f1, f2
-    p=(1+f1-f2)/2.
-    if np.random.rand()<p:
-        current=alternative
-
-    if f2==1: 
-        print "success"
-        sketch(sources+current)
-        sys.exit(0)
-
-print "fail"
 

@@ -10,7 +10,6 @@ posxy = lambda x,y: {"x":x, "y":y}
 building_blocks = [lambda x,y: {"type":"crossing", "pos": posxy(x,y)}, lambda x,y: {"type":"coupler", "ratio":.5, "pos": posxy(x,y)}]
 bp = lambda y: {"type": "bellpair", "pos": posxy(-1, y)}
 sps = lambda y: {"type": "sps", "pos": posxy(-1, y)}
-bucket = lambda y: {"type": "bucket", "pos": posxy(100, y)}
 
 def check_unitary(u):
     u=np.matrix(u)
@@ -35,9 +34,10 @@ class Circuit(object):
     def __init__(self, initialize=False, width=5, depth=5):
         self.width, self.depth=width, depth
         self.json=[]
+        self.fitness=0
         if initialize: self.init_random()
 
-    def init_random(self, count=10):
+    def init_random(self, count=2):
         """ Generate a new random circuit """
         self.json=[]
         for i in range(count):
@@ -61,7 +61,7 @@ class Circuit(object):
     def mutate_delete(self):
         """ Find an occupied slot, and delete a component """
         n=len(self.json)
-        if n>0: del self.json[randint(len(self.json))]
+        if n>1: self.json.pop(randint(len(self.json)))
 
     def mutate(self):
         """ Either add or remove a component """
