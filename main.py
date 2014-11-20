@@ -7,14 +7,14 @@ from pprint import pprint
 import sys
 from circuit import *
 
-sources=[sps(0), sps(1), sps(2), sps(3), sps(4)]
+sources=[sps(0), sps(2), sps(5), sps(9)]
 #detectors=[{"type":"bucket", "pos":posxy(5, y), "patterns":[y]} for y in (2,3,4)]
 
 def fitness(circuit):
-    target_state = defaultdict(complex, {(0,0,1,1,2):1})
+    target_state = defaultdict(complex, {(0,2,8,9):lo.ir2, (1,3,8,9):lo.ir2})
     compiled=lo.compile(sources+circuit.json)
     compiled["patterns"]=target_state.keys()
-    check_unitary(compiled["unitary"])
+    #check_unitary(compiled["unitary"])
     output_state = lo.simulate(**compiled)
     return abs(lo.dinner(output_state, target_state))**2
 
@@ -25,11 +25,11 @@ def crossover(a, b):
         return b.copy()
 
 # Start here
-width=5; depth=5
+width=10; depth=15
 generation_size=500
 mutation_probability=.3
 keep_fraction=.5
-generation=[Circuit(True, 5, 5) for i in range(generation_size)]
+generation=[Circuit(True, width, depth) for i in range(generation_size)]
 t=clock()
 
 while generation[0].fitness<1:
