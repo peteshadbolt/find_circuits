@@ -37,7 +37,7 @@ class Circuit(object):
         self.fitness=0
         if initialize: self.init_random()
 
-    def init_random(self, count=2):
+    def init_random(self, count=10):
         """ Generate a new random circuit """
         self.json=[]
         for i in range(count):
@@ -52,7 +52,7 @@ class Circuit(object):
     def mutate_add(self):
         """ Find an empty slot, and add a component """
         x = randint(self.depth)
-        y = randint(self.width)
+        y = randint(self.width-1)
         new_component = random.choice(building_blocks)(x,y)
         for c in self.json:
             if collision(c, new_component): return
